@@ -16,34 +16,27 @@
 'use strict';
 
 // Signs-in Friendly Chat.
-function signIn() {
-  // TODO 1: Sign in Firebase with credential from the Google user.
+const signIn = () => {
+  const provider = new firebase.auth.GoogleAuthProvider();
+
+  firebase.auth().signInWithPopup(provider);
 }
 
 // Signs-out of Friendly Chat.
-function signOut() {
-  // TODO 2: Sign out of Firebase.
-}
+const signOut = () => firebase.auth().signOut();
 
 // Initiate firebase auth.
-function initFirebaseAuth() {
-  // TODO 3: Initialize Firebase.
-}
+const initFirebaseAuth = () => firebase.auth().onAuthStateChanged(authStateObserver);
+
 
 // Returns the signed-in user's profile Pic URL.
-function getProfilePicUrl() {
-  // TODO 4: Return the user's profile pic URL.
-}
+const getProfilePicUrl = () => firebase.auth().currentUser.photoURL || '/images/profile_placeholder.png';
 
 // Returns the signed-in user's display name.
-function getUserName() {
-  // TODO 5: Return the user's display name.
-}
+const getUserName = () => firebase.auth().currentUser.displayName;
 
 // Returns true if a user is signed-in.
-function isUserSignedIn() {
-  // TODO 6: Return true if a user is signed-in.
-}
+const isUserSignedIn = () => !!firebase.auth().currentUser;
 
 // Saves a new message on the Firebase DB.
 function saveMessage(messageText) {
@@ -287,7 +280,7 @@ mediaCaptureElement.addEventListener('change', onMediaFileSelected);
 // initialize Firebase
 initFirebaseAuth();
 
-// Remove the warning about timstamps change. 
+// Remove the warning about timstamps change.
 var firestore = firebase.firestore();
 var settings = {timestampsInSnapshots: true};
 firestore.settings(settings);
