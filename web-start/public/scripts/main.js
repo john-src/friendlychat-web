@@ -39,13 +39,35 @@ const getUserName = () => firebase.auth().currentUser.displayName;
 const isUserSignedIn = () => !!firebase.auth().currentUser;
 
 // Saves a new message on the Firebase DB.
-function saveMessage(messageText) {
-  // TODO 7: Push a new message to Firebase.
+const saveMessage = (messageText)  => {
+  return firebase.firestore().collection('messages').add({
+    name: getUserName(),
+    text: messageText,
+    profilePicUrl: getProfilePicUrl(),
+    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+  }).catch(error => {
+    console.error('Error writing new messasge to Firebase DB', error);
+  });
 }
 
 // Loads chat messages history and listens for upcoming ones.
-function loadMessages() {
-  // TODO 8: Load and listens for new messages.
+const loadMessages = () => {
+  const query = firebase.firestore()
+    .collection('messages')
+    .orderBy('timestamp', 'desc')
+    .limit(12);
+
+  query.onSnapshot(snapshot => {
+    snapshot.docChanges().forEach(change => {
+      if (change.type === 'removed') {
+        deleteMessage(change.doc.id);
+      } else {
+        const message = change.doc.data();
+        displayMessage(change.doc.id, message.timestamp, message.name,
+          message.text, message.profilePicUrl, message.imageUrl);
+      }
+    });
+  });
 }
 
 // Saves a new message containing an image in Firebase.
@@ -282,8 +304,9 @@ initFirebaseAuth();
 
 // Remove the warning about timstamps change.
 var firestore = firebase.firestore();
-var settings = {timestampsInSnapshots: true};
-firestore.settings(settings);
+// var settings = {timestampsInSnapshots: true};
+// firestore.settings(settings);
+firestore.settings({});
 
 // TODO: Enable Firebase Performance Monitoring.
 
