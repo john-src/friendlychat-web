@@ -72,18 +72,51 @@ const loadMessages = () => {
 
 // Saves a new message containing an image in Firebase.
 // This first saves the image in Firebase storage.
-function saveImageMessage(file) {
-  // TODO 9: Posts a new image as a message.
+const saveImageMessage = file => {
+  // 1 - We add a message with a loading icon that will get updated with the shared image.
+  firebase.firestore()
+    .collection('messages').add({
+      name: getUserName(),
+      imageUrl: LOADING_IMAGE_URL,
+      profilePicUrl: getProfilePicUrl(),
+      timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    }).then(messageRef => {
+      // 2 - Upload the image to Cloud Storage.
+      const filePath = firebase.auth().currentUser.uid + '/' + messageRef.id + '/' + file.name;
+      return firebase.storage().ref(filePath).put(file).then(fileSnapshot => {
+        // 3 - Generate a public URL for the file.
+        return fileSnapshot.ref.getDownloadURL().then(url => {
+          // 4 - Update the chat message placeholder with the image's URL.
+          return messageRef.update({
+            imageUrl: url,
+            storageUri: fileSnapshot.metadata.fullPath
+          });
+        });
+      });
+    }).catch(error => console.error('There was an error uploading a file to Cloud Storage:', error));
 }
 
 // Saves the messaging device token to the datastore.
 function saveMessagingDeviceToken() {
-  // TODO 10: Save the device token in the realtime datastore
-}
+  firebase.messaging().getToken().then(currentToken => {
+    if (currentToken) {
+      console.log('Got FCM device token: ', currentToken);
+      // saving device token to datatore
+      firebase.firestore().collection('fcmTokens').doc(currentToken)
+        .set({uid: firebase.auth().currentUser.uid});
+    } else {
+      // need to request permissions to show notifications
+      requestNotificationsPermissions();
+    }
+  }).catch(error => console.error('Unable to get messaging token.', error));
+};
 
 // Requests permissions to show notifications.
 function requestNotificationsPermissions() {
-  // TODO 11: Request permissions to send notifications.
+  console.log('Requesting notifications permission...');
+  firebase.messaging().requestPermission().then(() => {
+    saveMessagingDeviceToken();
+  }).catch(error => console.error('Unable to get permission to notify. ', error));
 }
 
 // Triggered when a file is selected via the media picker.
